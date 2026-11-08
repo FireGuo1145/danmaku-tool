@@ -2786,11 +2786,18 @@ html.is-overlay #root {
 }
 
 @media (max-width: 1024px) {
+  /* 独立弹幕台始终撑满视口，避免列表被 max-height 截断后底部留白 */
+  .standalone {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
   .standalone .feed-card {
-    min-height: 70dvh;
+    flex: 1;
+    min-height: 0;
   }
 
   .standalone .feed-list {
-    max-height: 70dvh;
+    max-height: none;
   }
 }
