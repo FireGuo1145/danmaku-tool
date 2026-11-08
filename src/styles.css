@@ -840,6 +840,18 @@ code {
   overflow-y: hidden;
 }
 
+/* 锁定最新时把消息贴到底部，避免底部留空白 */
+.feed-rows {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.feed-rows.is-bottom {
+  margin-top: auto;
+}
+
 .feed-list::-webkit-scrollbar {
   width: 8px;
 }

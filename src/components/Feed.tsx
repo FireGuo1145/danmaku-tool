@@ -266,10 +266,15 @@ export function Feed({
         onScroll={handleScroll}
         style={{ fontSize }}
       >
-        {visible.length === 0 ? placeholder : null}
-        {visible.map((event) => (
-          <EventRow key={event.id} event={event} />
-        ))}
+        {visible.length === 0 ? (
+          placeholder
+        ) : (
+          <div className={`feed-rows ${pinned ? 'is-bottom' : ''}`}>
+            {visible.map((event) => (
+              <EventRow key={event.id} event={event} />
+            ))}
+          </div>
+        )}
       </div>
 
       {pinned ? null : (
