@@ -123,7 +123,7 @@ OBS 使用方法：添加「浏览器」来源，填入上面的地址，宽高�
 | `VITE_SHOW_ENTER` | `true` | 显示进场 / 关注 / 分享消息 |
 | `VITE_SHOW_LIKE` | `false` | 显示点赞消息 |
 | `VITE_GIFT_TOAST_MIN` | `1000` | 礼物浮层提示阈值（金瓜子，1000 = 1 元） |
-| `VITE_AUTH_REFRESH_MINUTES` | `10` | 访客弹幕凭证刷新间隔（分钟），`0` 关闭定期刷新 |
+| `VITE_AUTH_REFRESH_MINUTES` | `10` | 访客弹幕凭证刷新间隔（分钟），`0` 关闭定期刷新（仍保留打码自救） |
 | `VITE_DEMO_MODE` | `false` | 默认进入演示模式 |
 | `VITE_BILI_API_BASE` | `/bili-api` | 本地代理前缀 |
 | `BILI_COOKIE` | 空 | **推荐**：服务端登录 Cookie，用于换登录态弹幕 token（不加 `VITE_` 前缀，不会进浏览器） |
