@@ -44,9 +44,8 @@ export function readOverlayConfig(mode: OverlayMode): OverlayConfig {
   const demoParam = params.get('demo');
 
   const themeParam = params.get('theme');
-  // /danmaku 与主界面一致，默认深色；其他嵌入视图默认透明
-  const theme: 'transparent' | 'dark' =
-    themeParam === 'transparent' ? 'transparent' : themeParam === 'dark' ? 'dark' : mode === 'danmaku' ? 'dark' : 'transparent';
+  // 嵌入视图默认透明背景，可直接叠在 OBS 画面上；?theme=dark 切深色底
+  const theme: 'transparent' | 'dark' = themeParam === 'dark' ? 'dark' : 'transparent';
   // /danmaku 默认展示全部消息类型，其他视图默认精简
   const fullFeed = mode === 'danmaku';
 
@@ -55,7 +54,8 @@ export function readOverlayConfig(mode: OverlayMode): OverlayConfig {
     roomId,
     demo: demoParam === '1' || (demoParam === null && config.demoMode),
     theme,
-    chrome: readFlag(params, 'chrome', true),
+    // /danmaku 默认是纯展示层（无顶部信息条、不可交互）；其他嵌入视图默认显示信息条
+    chrome: readFlag(params, 'chrome', mode !== 'danmaku'),
     scrollable: readFlag(params, 'scroll', false),
     fontSize: readInt(params, 'font', fullFeed ? 14 : 15, 12, 32),
     maxMessages: readInt(params, 'max', fullFeed ? 200 : 80, 20, 500),

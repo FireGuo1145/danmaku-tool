@@ -71,7 +71,7 @@ yarn preview   # → http://127.0.0.1:4173
 
 | 路径 | 内容 |
 | --- | --- |
-| `/danmaku` | **与主界面弹幕流完全一致**：同款消息行样式，默认显示全部消息（弹幕、礼物、SC、大航海、进场、点赞、系统）；**不包含顶部筛选栏**；默认深色背景，`?theme=transparent` 可做 OBS 透明弹幕层；`?chrome=0` 时整页不可交互 |
+| `/danmaku` | 与主界面同款消息内容（默认全部类型：弹幕、礼物、SC、大航海、进场、点赞、系统），**不包含筛选栏**；默认**透明背景 + 无顶部信息条**，每条消息带独立半透明气泡边框，直接叠在 OBS 画面上即可；`?theme=dark` 深色底，`?chrome=1` 显示顶部信息条并恢复交互 |
 | `/gift` | 礼物动态 + 礼物榜 |
 | `/superchat` | 醒目留言墙 |
 | `/stats` | 数据看板（弹幕、礼物、SC、大航海、人气、看过、消息速率） |
@@ -82,8 +82,8 @@ yarn preview   # → http://127.0.0.1:4173
 | --- | --- | --- |
 | `room` | `.env` 的默认房间 | 房间号 / 短号 |
 | `demo` | `0` | `1` 使用本地回放数据 |
-| `theme` | `dark`（`/danmaku`）/ `transparent`（其他） | `transparent` 透明背景 / `dark` 深色背景 |
-| `chrome` | `1` | `0` 隐藏顶部信息条与底部提示；`/danmaku` 下同时整页不可交互（纯展示） |
+| `theme` | `transparent` | `transparent` 透明背景（OBS 用）/ `dark` 深色背景 |
+| `chrome` | `0`（`/danmaku`）/ `1`（其他） | `0` 隐藏顶部信息条与底部提示；`/danmaku` 下同时整页不可交互（纯展示），`1` 显示信息条并恢复交互 |
 | `scroll` | `0` | `1` 允许手动滚动查看历史（默认始终锁定最新消息） |
 | `font` | `14`（`/danmaku`）/ `15`（其他） | 弹幕字号（12–32） |
 | `max` | `200`（`/danmaku`）/ `80`（其他） | 最多保留消息条数（20–500） |
@@ -95,9 +95,9 @@ yarn preview   # → http://127.0.0.1:4173
 示例：
 
 ```text
-http://127.0.0.1:5173/danmaku?room=3947892                      # 和主界面一样，全部消息
-http://127.0.0.1:5173/danmaku?room=3947892&theme=transparent     # OBS 透明弹幕层
-http://127.0.0.1:5173/danmaku?room=3947892&font=18&max=300
+http://127.0.0.1:5173/danmaku?room=3947892                 # 默认：透明背景 + 气泡边框 + 纯展示
+http://127.0.0.1:5173/danmaku?room=3947892&theme=dark      # 深色背景
+http://127.0.0.1:5173/danmaku?room=3947892&chrome=1        # 显示顶部信息条并恢复交互
 http://127.0.0.1:5173/gift?room=3947892&chrome=0
 http://127.0.0.1:5173/stats?room=3947892&theme=dark
 http://127.0.0.1:5173/danmaku?room=3947892&scroll=1   # 允许手动滚动历史
