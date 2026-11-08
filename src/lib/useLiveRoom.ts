@@ -80,6 +80,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [liveStatus, setLiveStatus] = useState(0);
   const [connectionInfo, setConnectionInfo] = useState<ConnectionInfo | null>(null);
+  const [authRefreshes, setAuthRefreshes] = useState(0);
 
   const maxMessagesRef = useRef(options.maxMessages);
   const demoRef = useRef(options.demo);
@@ -111,6 +112,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
   const guestRef = useRef(false);
   /** 近期被打码的昵称计数，用于发现服务端脱敏 */
   const maskedRef = useRef({ count: 0, since: 0 });
+  const maskReauthTimesRef = useRef<number[]>([]);
 
   const teardown = useCallback(() => {
     if (retryTimerRef.current !== null) {
@@ -200,7 +202,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
     toastTimersRef.current.add(timer);
   }, []);
 
-  const connectRef = useRef<((roomId: number, mode: 'fresh' | 'retry') => void) | null>(null);
+  const connectRef = useRef<((roomId: number, mode: 'fresh' | 'retry', silent?: boolean) => void) | null>(null);
 
   /**
    * 软重连：保留消息，重新拉取 token 并重连。
@@ -212,13 +214,16 @@ export function useLiveRoom(options: LiveRoomOptions) {
     // 登录态（BILI_COOKIE / 手动 uid+token）不会被打码，也不需要自动重连
     if (!desiredRef.current || demoRef.current || !guestRef.current) return;
     const now = Date.now();
-    if (now - lastAuthRef.current < 4 * 60_000) return; // 至少间隔 4 分钟，避免频繁重连
+    // 自动刷新间隔的 80% 作为最小间隔：30 秒刷新时可连续生效，5 分钟刷新时最多每分钟一次
+    const minGap = config.authRefreshSeconds > 0 ? Math.max(10_000, Math.min(60_000, config.authRefreshSeconds * 800)) : 60_000;
+    if (now - lastAuthRef.current < minGap) return;
     const targetRoom = roomIdRef.current;
     if (!targetRoom) return;
     lastAuthRef.current = now;
     maskedRef.current = { count: 0, since: 0 };
+    setAuthRefreshes((count) => count + 1);
     console.info(`[弹幕台] ${reason}，正在重新鉴权…`);
-    connectRef.current?.(targetRoom, 'retry');
+    connectRef.current?.(targetRoom, 'retry', true);
   }, []);
 
   /** 处理一条解析后的直播事件 */
@@ -257,13 +262,21 @@ export function useLiveRoom(options: LiveRoomOptions) {
           // 访客连接跑久了 B 站会开始脱敏昵称，短时间内出现一批 `取***` 就重新鉴权
           if (guestRef.current && feed.user.name.includes('*')) {
             const now = Date.now();
-            if (now - maskedRef.current.since > 3 * 60_000) {
+            if (now - maskedRef.current.since > 2 * 60_000) {
               maskedRef.current = { count: 0, since: now };
             }
             maskedRef.current.count += 1;
-            if (maskedRef.current.count >= 6) {
+
+            if (maskedRef.current.count >= 3) {
               maskedRef.current = { count: 0, since: now };
-              softReauth('检测到昵称被批量打码');
+              // 只有真正发起重连才计入额度；被节流拦下的不算，避免把额度白白用光
+              const minGap = config.authRefreshSeconds > 0 ? Math.max(10_000, Math.min(60_000, config.authRefreshSeconds * 800)) : 60_000;
+              const canReauth = now - lastAuthRef.current >= minGap;
+              const recent = maskReauthTimesRef.current.filter((time) => now - time < 10 * 60_000);
+              if (canReauth && recent.length < 10) {
+                maskReauthTimesRef.current = [...recent, now];
+                softReauth('检测到昵称被批量打码');
+              }
             }
           }
           break;
@@ -365,7 +378,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
   }, []);
 
   const startClient = useCallback(
-    (bundle: RoomBundle, generation: number) => {
+    (bundle: RoomBundle, generation: number, announce = true) => {
       const authUid = config.uid > 0 ? config.uid : bundle.danmaku.uid || 0;
       guestRef.current = authUid === 0;
       const credentials = {
@@ -425,10 +438,10 @@ export function useLiveRoom(options: LiveRoomOptions) {
         setAttempt(0);
         setStatus('live');
         setError(null);
-        setStartedAt(Date.now());
+        setStartedAt((previous) => previous ?? Date.now());
         lastAuthRef.current = Date.now();
         maskedRef.current = { count: 0, since: 0 };
-        appendSystem(`已连上弹幕服务器 · 房间 ${bundle.room.roomId}`, 'live');
+        if (announce) appendSystem(`已连上弹幕服务器 · 房间 ${bundle.room.roomId}`, 'live');
       });
 
       client.on('message', (message) => {
@@ -460,7 +473,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
   );
 
   const connectInternal = useCallback(
-    (roomIdInput: number, mode: 'fresh' | 'retry') => {
+    (roomIdInput: number, mode: 'fresh' | 'retry', silent = false) => {
       const roomId = Math.max(1, Math.floor(roomIdInput));
       if (!Number.isFinite(roomId)) return;
 
@@ -512,7 +525,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
           setRoom(bundle.room);
           setWarnings(bundle.warnings);
           setLiveStatus(bundle.room.liveStatus === 1 ? 1 : 0);
-          startClient(bundle, generation);
+          startClient(bundle, generation, !silent);
         })
         .catch((err) => {
           if (generation !== generationRef.current) return;
@@ -558,14 +571,14 @@ export function useLiveRoom(options: LiveRoomOptions) {
 
   // 访客会话定期刷新凭证；登录态不做任何自动重连
   useEffect(() => {
-    if (status !== 'live' || config.authRefreshMinutes <= 0) return;
+    if (status !== 'live' || config.authRefreshSeconds <= 0) return;
 
     const timer = window.setInterval(() => {
       if (!desiredRef.current || demoRef.current || !guestRef.current) return;
-      if (Date.now() - lastAuthRef.current >= config.authRefreshMinutes * 60_000) {
+      if (Date.now() - lastAuthRef.current >= config.authRefreshSeconds * 1000) {
         softReauth('访客凭证需要刷新');
       }
-    }, 30_000);
+    }, 5000);
 
     return () => window.clearInterval(timer);
   }, [status, softReauth]);
@@ -607,6 +620,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
     startedAt,
     liveStatus,
     connectionInfo,
+    authRefreshes,
     connect,
     disconnect,
     reconnect,

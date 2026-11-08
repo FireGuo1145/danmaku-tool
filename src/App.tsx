@@ -139,6 +139,7 @@ function Dashboard() {
             attempt={live.attempt}
             warnings={live.warnings}
             demo={demoActive}
+            authRefreshes={live.authRefreshes}
           />
           <p className="side-note">
             数据接口：<code>{config.apiBase}</code> · 协议 protover {config.protover}

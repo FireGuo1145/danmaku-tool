@@ -168,9 +168,19 @@ export interface ConnectionPanelProps {
   attempt: number;
   warnings: string[];
   demo: boolean;
+  authRefreshes: number;
 }
 
-export function ConnectionPanel({ status, room, info, startedAt, attempt, warnings, demo }: ConnectionPanelProps) {
+export function ConnectionPanel({
+  status,
+  room,
+  info,
+  startedAt,
+  attempt,
+  warnings,
+  demo,
+  authRefreshes,
+}: ConnectionPanelProps) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -228,6 +238,10 @@ export function ConnectionPanel({ status, room, info, startedAt, attempt, warnin
         <div>
           <dt>重连次数</dt>
           <dd>{attempt}</dd>
+        </div>
+        <div>
+          <dt>凭证刷新</dt>
+          <dd>{authRefreshes} 次</dd>
         </div>
       </dl>
 

@@ -45,7 +45,12 @@ export const config = {
   showEnter: readBool(env.VITE_SHOW_ENTER, true),
   showLike: readBool(env.VITE_SHOW_LIKE, false),
   giftToastMin: readInt(env.VITE_GIFT_TOAST_MIN, 1000, 0, Number.MAX_SAFE_INTEGER),
-  /** 访客弹幕凭证刷新间隔（分钟），0 表示关闭定期刷新 */
-  authRefreshMinutes: readInt(env.VITE_AUTH_REFRESH_MINUTES, 10, 0, 120),
+  /** 访客弹幕凭证刷新间隔（秒），0 表示关闭定期刷新（仍保留打码自救） */
+  authRefreshSeconds:
+    env.VITE_AUTH_REFRESH_SECONDS != null && env.VITE_AUTH_REFRESH_SECONDS !== ''
+      ? readInt(env.VITE_AUTH_REFRESH_SECONDS, 30, 0, 3600)
+      : env.VITE_AUTH_REFRESH_MINUTES != null && env.VITE_AUTH_REFRESH_MINUTES !== ''
+        ? readInt(env.VITE_AUTH_REFRESH_MINUTES, 5, 0, 120) * 60
+        : 30,
   quickRooms,
 } as const;
