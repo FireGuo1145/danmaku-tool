@@ -24,6 +24,12 @@ export interface BaseEvent {
   ts: number;
 }
 
+export interface DanmakuEmote {
+  url: string;
+  width: number;
+  height: number;
+}
+
 export interface DanmakuEvent extends BaseEvent {
   kind: 'danmaku';
   user: LiveUser;
@@ -31,8 +37,10 @@ export interface DanmakuEvent extends BaseEvent {
   color: string;
   /** 1 普通 / 4 底部 / 5 顶部 */
   mode: number;
-  /** 表情包图片地址 */
+  /** 大表情（dm_type = 1）图片地址 */
   emoticon?: string;
+  /** B 站小表情：文字里的 [表情名] → 图片 */
+  emotes?: Record<string, DanmakuEmote>;
 }
 
 export interface GiftEvent extends BaseEvent {

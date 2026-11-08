@@ -40,6 +40,8 @@ export interface FeedProps {
   onQuickRoom: (roomId: number) => void;
   /** 锁定最新消息：列表不可手动滚动，始终贴底（嵌入视图默认开启） */
   pinned?: boolean;
+  /** 隐藏顶部筛选栏，只保留消息列表（独立弹幕台使用） */
+  hideToolbar?: boolean;
 }
 
 export function Feed({
@@ -60,6 +62,7 @@ export function Feed({
   quickRooms,
   onQuickRoom,
   pinned = false,
+  hideToolbar = false,
 }: FeedProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -205,6 +208,7 @@ export function Feed({
 
   return (
     <section className="card feed-card">
+      {hideToolbar ? null : (
       <div className="feed-toolbar">
         <div className="feed-filters">
           {FILTERS.map((item) => (
@@ -241,6 +245,7 @@ export function Feed({
           </button>
         </div>
       </div>
+      )}
 
       {showBanner ? (
         <div className="banner banner-warn">

@@ -70,6 +70,24 @@ const TEXTS = [
   '把氛围感拉满了',
 ];
 
+/** B 站自带小表情（真实抓取到的图片地址） */
+const SMALL_EMOTES: Record<string, { url: string; width: number; height: number }> = {
+  '[dog]': { url: 'https://i0.hdslb.com/bfs/live/4428c84e694fbf4e0ef6c06e958d9352c3582740.png', width: 20, height: 20 },
+  '[大笑]': { url: 'https://i0.hdslb.com/bfs/live/e2589d086df0db8a7b5ca2b1273c02d31d4433d4.png', width: 20, height: 20 },
+  '[哇]': { url: 'https://i0.hdslb.com/bfs/live/650c3e22c06edcbca9756365754d38952fc019c3.png', width: 20, height: 20 },
+  '[喝彩]': { url: 'https://i0.hdslb.com/bfs/live/b51824125d09923a4ca064f0c0b49fc97d3fab79.png', width: 20, height: 20 },
+};
+
+const EMOTE_TEXTS = [
+  { text: '妙啊[dog]', tokens: ['[dog]'] },
+  { text: '哈哈哈哈哈[大笑]', tokens: ['[大笑]'] },
+  { text: '哇[哇] 太强了', tokens: ['[哇]'] },
+  { text: '好耶[喝彩][喝彩]', tokens: ['[喝彩]'] },
+];
+
+/** 真实抓取到的大表情（dm_type = 1） */
+const BIG_EMOTE_URL = 'https://i0.hdslb.com/bfs/garb/1e0afabb9f113b5d935fb0641a7fcf5f5a5c6a85.jpg';
+
 const GIFTS = [
   { name: '辣条', price: 100, coinType: 'silver' as const },
   { name: '小心心', price: 0, coinType: 'silver' as const },
@@ -110,12 +128,28 @@ function randomUser(): DemoUser {
   };
 }
 
-function danmakuPayload(user: DemoUser, text: string, color = 0xffffff) {
+function danmakuPayload(
+  user: DemoUser,
+  text: string,
+  color = 0xffffff,
+  options: { emotes?: string[]; bigEmote?: boolean } = {},
+) {
   const now = Date.now();
+  const emots = options.emotes
+    ? Object.fromEntries(
+        options.emotes.map((token) => [
+          token,
+          { ...SMALL_EMOTES[token], count: 1, descript: token, emoji: token, emoticon_unique: `emoji_${token}` },
+        ]),
+      )
+    : null;
+
   const extra = {
     content: text,
     color,
     mode: 1,
+    dm_type: options.bigEmote ? 1 : 0,
+    emots,
     user: {
       uid: user.uid,
       base: { name: user.name, face: user.face },
@@ -139,8 +173,10 @@ function danmakuPayload(user: DemoUser, text: string, color = 0xffffff) {
     0,
     0,
     '',
-    0,
-    '{}',
+    options.bigEmote ? 1 : 0,
+    options.bigEmote
+      ? { url: BIG_EMOTE_URL, width: 162, height: 162, emoticon_unique: 'room_demo_big', in_player_area: 1 }
+      : '{}',
     '{}',
     { extra: JSON.stringify(extra) },
   ];
@@ -293,7 +329,19 @@ export function startDemoStream(handlers: DemoHandlers): () => void {
     const roll = Math.random();
     if (roll < 0.58) {
       const color = Math.random() < 0.18 ? pick([0xff7299, 0x00aeec, 0xffd54a, 0x9d7bff]) : 0xffffff;
-      handlers.emit('DANMU_MSG', danmakuPayload(randomUser(), pick(TEXTS), color));
+      const emote = Math.random() < 0.16 ? pick(EMOTE_TEXTS) : null;
+      const bigEmote = !emote && Math.random() < 0.04;
+      handlers.emit('DANMU_MSG', {
+        ...danmakuPayload(
+          randomUser(),
+          bigEmote ? '笑' : emote ? emote.text : pick(TEXTS),
+          color,
+          {
+            emotes: emote?.tokens,
+            bigEmote,
+          },
+        ),
+      });
     } else if (roll < 0.78) {
       emitGift();
     } else if (roll < 0.92) {

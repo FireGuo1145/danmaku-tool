@@ -1,4 +1,5 @@
 import type {
+  DanmakuEmote,
   DanmakuEvent,
   EnterEvent,
   FeedEvent,
@@ -35,6 +36,10 @@ function nextId(prefix: string): string {
 function toGuardLevel(value: unknown): GuardLevel {
   const level = Number(value);
   return level === 1 || level === 2 || level === 3 ? level : 0;
+}
+
+function normalizeUrl(value: string): string {
+  return value.startsWith('http://') ? `https://${value.slice('http://'.length)}` : value;
 }
 
 function hexColor(value: unknown): string {
@@ -131,7 +136,24 @@ function parseDanmaku(payload: any): ParsedCommand | null {
   const emoticonMeta = [meta[13], meta[12]].find(
     (item) => item && typeof item === 'object' && typeof (item as any).url === 'string' && /^https?:/.test((item as any).url),
   ) as { url: string } | undefined;
-  const emoticon = emoticonMeta?.url;
+  const emoticon = emoticonMeta?.url ? normalizeUrl(emoticonMeta.url) : undefined;
+
+  // B 站小表情：extra.emots 是 { "[狗头]": { url, width, height, ... } } 形式的映射
+  const rawEmots = extra?.emots;
+  let emotes: Record<string, DanmakuEmote> | undefined;
+  if (rawEmots && typeof rawEmots === 'object') {
+    const map: Record<string, DanmakuEmote> = {};
+    for (const [token, value] of Object.entries(rawEmots)) {
+      const emote = value as { url?: unknown; width?: unknown; height?: unknown } | null;
+      if (!emote || typeof emote.url !== 'string' || !emote.url) continue;
+      map[token] = {
+        url: normalizeUrl(emote.url),
+        width: Number(emote.width) || 20,
+        height: Number(emote.height) || 20,
+      };
+    }
+    if (Object.keys(map).length > 0) emotes = map;
+  }
 
   const event: DanmakuEvent = {
     id: nextId('dm'),
@@ -142,6 +164,7 @@ function parseDanmaku(payload: any): ParsedCommand | null {
     color: hexColor(extra?.color ?? meta[3]),
     mode: Number(extra?.mode ?? meta[1] ?? 1),
     emoticon,
+    emotes,
   };
 
   return { feed: event };

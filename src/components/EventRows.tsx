@@ -9,6 +9,7 @@ import {
   withAlpha,
 } from '../lib/format';
 import type {
+  DanmakuEmote,
   DanmakuEvent,
   EnterEvent,
   FeedEvent,
@@ -84,6 +85,38 @@ export function GuardChip({ level }: { level: GuardLevel }) {
   return <span className={`guard guard-${level}`}>{guardLabel(level)}</span>;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** 把文字里的 [表情名] 替换成 B 站小表情图片 */
+function DanmakuText({ text, emotes }: { text: string; emotes?: Record<string, DanmakuEmote> }) {
+  if (!emotes || Object.keys(emotes).length === 0) return <>{text}</>;
+
+  const tokens = Object.keys(emotes).sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(`(${tokens.map(escapeRegExp).join('|')})`, 'g');
+
+  return (
+    <>
+      {text.split(pattern).map((part, index) => {
+        const emote = emotes[part];
+        if (!emote) return <span key={index}>{part}</span>;
+        return (
+          <img
+            key={index}
+            className="emoticon emoticon--small"
+            src={emote.url}
+            alt={part}
+            title={part}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        );
+      })}
+    </>
+  );
+}
+
 function DanmakuRow({ event }: { event: DanmakuEvent }) {
   const { user } = event;
   return (
@@ -108,7 +141,7 @@ function DanmakuRow({ event }: { event: DanmakuEvent }) {
               loading="lazy"
             />
           ) : (
-            event.text
+            <DanmakuText text={event.text} emotes={event.emotes} />
           )}
         </div>
       </div>

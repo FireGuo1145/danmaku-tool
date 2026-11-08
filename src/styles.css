@@ -1016,6 +1016,14 @@ code {
   object-fit: contain;
 }
 
+/* B 站小表情：[表情名] 内联图片 */
+.emoticon--small {
+  height: 1.42em;
+  max-width: 4em;
+  vertical-align: -0.32em;
+  margin: 0 1px;
+}
+
 .row-danmaku.is-pinned {
   background: rgba(251, 114, 153, 0.06);
   box-shadow: inset 2px 0 0 rgba(251, 114, 153, 0.5);
@@ -2755,6 +2763,14 @@ html.is-overlay #root {
 
 .standalone--transparent .ov-head {
   background: rgba(8, 10, 15, 0.5);
+}
+
+/* chrome=0：视为 OBS 展示层，不接受任何鼠标/键盘交互 */
+.standalone.is-passive,
+.standalone.is-passive * {
+  pointer-events: none !important;
+  user-select: none;
+  cursor: default;
 }
 
 @media (max-width: 1024px) {

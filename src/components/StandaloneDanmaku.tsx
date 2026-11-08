@@ -27,6 +27,8 @@ export function StandaloneDanmaku() {
   const [autoScroll, setAutoScroll] = useState(true);
   const startedRef = useRef(false);
   const transparent = cfg.theme === 'transparent';
+  // chrome=0 表示这是给 OBS 用的纯展示层：整页不可交互
+  const passive = !cfg.chrome;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -60,7 +62,10 @@ export function StandaloneDanmaku() {
   const suffix = cfg.demo ? '&demo=1' : '';
 
   return (
-    <div className={`app standalone ${transparent ? 'standalone--transparent' : ''}`}>
+    <div
+      className={`app standalone ${transparent ? 'standalone--transparent' : ''} ${passive ? 'is-passive' : ''}`}
+      inert={passive || undefined}
+    >
       {transparent ? null : (
         <div className="backdrop" aria-hidden="true">
           <span className="orb orb-pink" />
@@ -117,7 +122,8 @@ export function StandaloneDanmaku() {
         demo={cfg.demo}
         quickRooms={config.quickRooms}
         onQuickRoom={(roomId) => live.connect(roomId)}
-        pinned={!cfg.scrollable}
+        pinned={!cfg.scrollable || passive}
+        hideToolbar
       />
     </div>
   );
