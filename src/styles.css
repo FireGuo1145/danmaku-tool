@@ -1121,12 +1121,19 @@ code {
 /* 醒目留言 */
 
 .row-sc {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.sc-bubble {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
   border: 1px solid;
   border-left-width: 3px;
   border-radius: 12px;
-  padding: 8px 12px;
-  margin: 4px 0;
 }
 
 .sc-head {
@@ -2712,7 +2719,7 @@ html.is-overlay #root {
   padding: 10px 12px;
 }
 
-.overlay--superchat .row-sc {
+.overlay--superchat .sc-bubble {
   padding: 12px 14px;
 }
 
@@ -2788,30 +2795,47 @@ html.is-overlay #root {
 }
 
 .standalone .feed-row {
-  padding: 7px 10px;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 头像/图标在左，名称与内容放进独立消息气泡 */
+.standalone .feed-row > .row-main {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: calc(100% - 40px);
+  padding: 7px 11px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(8, 10, 15, 0.42);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-.standalone .feed-row:hover {
+.standalone .feed-row:hover > .row-main {
   background: rgba(8, 10, 15, 0.55);
   border-color: rgba(255, 255, 255, 0.24);
 }
 
+.standalone .row-guard > .row-main {
+  background: linear-gradient(100deg, rgba(94, 200, 245, 0.16), rgba(8, 10, 15, 0.42) 62%);
+}
+
+.standalone .row-danmaku.is-pinned > .row-main {
+  border-color: rgba(251, 114, 153, 0.4);
+}
+
 .standalone .row-enter,
 .standalone .row-like {
+  width: fit-content;
   padding: 4px 10px;
-}
-
-.standalone .row-sc {
-  border-left-width: 3px;
-}
-
-.standalone .row-guard {
-  background: linear-gradient(100deg, rgba(94, 200, 245, 0.16), rgba(8, 10, 15, 0.42) 62%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(8, 10, 15, 0.38);
 }
 
 .standalone .row-system span {

@@ -191,21 +191,23 @@ function GiftRow({ event }: { event: GiftEvent }) {
 function SuperChatRow({ event }: { event: SuperChatEvent }) {
   const accent = event.color ?? '#f6a623';
   return (
-    <div
-      className="feed-row row-sc"
-      style={{
-        borderColor: withAlpha(accent, 0.55),
-        background: `linear-gradient(100deg, ${withAlpha(accent, 0.16)}, transparent 65%)`,
-      }}
-    >
-      <div className="sc-head">
-        <Avatar user={event.user} size={22} />
-        {event.user.medal ? <MedalPill medal={event.user.medal} /> : null}
-        <span className="row-name">{event.user.name}</span>
-        <span className="sc-badge">醒目留言</span>
-        <span className="sc-price">¥{event.price}</span>
+    <div className="feed-row row-sc">
+      <Avatar user={event.user} size={24} />
+      <div
+        className="sc-bubble"
+        style={{
+          borderColor: withAlpha(accent, 0.55),
+          background: `linear-gradient(100deg, ${withAlpha(accent, 0.16)}, transparent 65%)`,
+        }}
+      >
+        <div className="sc-head">
+          {event.user.medal ? <MedalPill medal={event.user.medal} /> : null}
+          <span className="row-name">{event.user.name}</span>
+          <span className="sc-badge">醒目留言</span>
+          <span className="sc-price">¥{event.price}</span>
+        </div>
+        <p className="sc-text">{event.text}</p>
       </div>
-      <p className="sc-text">{event.text}</p>
     </div>
   );
 }
