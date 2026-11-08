@@ -1,0 +1,32 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+
+# Yarn
+.yarn/cache
+.yarn/berry
+.yarn/install-state.gz
+.yarn/unplugged
+.pnp.*
+.corepack
+.yarn-*
+
+# 本地环境变量（含 Cookie / token 等私密信息）
+.env
+.env.local
+.env.*.local
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# 日志
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# 临时脚本
+.tmp
