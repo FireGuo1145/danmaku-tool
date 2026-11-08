@@ -43,17 +43,24 @@ export function readOverlayConfig(mode: OverlayMode): OverlayConfig {
   const roomId = Number.isInteger(roomParam) && roomParam > 0 ? roomParam : config.defaultRoomId;
   const demoParam = params.get('demo');
 
+  const themeParam = params.get('theme');
+  // /danmaku 与主界面一致，默认深色；其他嵌入视图默认透明
+  const theme: 'transparent' | 'dark' =
+    themeParam === 'transparent' ? 'transparent' : themeParam === 'dark' ? 'dark' : mode === 'danmaku' ? 'dark' : 'transparent';
+  // /danmaku 默认展示全部消息类型，其他视图默认精简
+  const fullFeed = mode === 'danmaku';
+
   return {
     mode,
     roomId,
     demo: demoParam === '1' || (demoParam === null && config.demoMode),
-    theme: params.get('theme') === 'dark' ? 'dark' : 'transparent',
+    theme,
     chrome: readFlag(params, 'chrome', true),
     scrollable: readFlag(params, 'scroll', false),
-    fontSize: readInt(params, 'font', 15, 12, 32),
-    maxMessages: readInt(params, 'max', 80, 20, 500),
-    showEnter: readFlag(params, 'enter', false),
-    showLike: readFlag(params, 'like', false),
+    fontSize: readInt(params, 'font', fullFeed ? 14 : 15, 12, 32),
+    maxMessages: readInt(params, 'max', fullFeed ? 200 : 80, 20, 500),
+    showEnter: readFlag(params, 'enter', fullFeed),
+    showLike: readFlag(params, 'like', fullFeed),
     showGuard: readFlag(params, 'guard', true),
     showSuperChat: readFlag(params, 'sc', true),
   };

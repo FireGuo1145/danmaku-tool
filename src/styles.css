@@ -768,6 +768,20 @@ code {
   transform: translateX(11px);
 }
 
+.pin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.pin-chip svg {
+  color: rgba(251, 114, 153, 0.72);
+}
+
 .feed-actions .icon-btn {
   width: 32px;
   height: 32px;
@@ -820,6 +834,10 @@ code {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
   overscroll-behavior: contain;
+}
+
+.feed-list.is-pinned {
+  overflow-y: hidden;
 }
 
 .feed-list::-webkit-scrollbar {
@@ -2721,5 +2739,30 @@ html.is-overlay #root {
 
   .ov-tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- 独立弹幕台 /danmaku ---------- */
+
+.standalone .feed-card {
+  flex: 1;
+  min-height: 0;
+}
+
+.standalone--transparent .feed-card {
+  background: rgba(15, 17, 26, 0.62);
+}
+
+.standalone--transparent .ov-head {
+  background: rgba(8, 10, 15, 0.5);
+}
+
+@media (max-width: 1024px) {
+  .standalone .feed-card {
+    min-height: 70dvh;
+  }
+
+  .standalone .feed-list {
+    max-height: 70dvh;
   }
 }

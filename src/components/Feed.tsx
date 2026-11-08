@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { formatCount } from '../lib/format';
 import type { ConnectionStatus, FeedEvent, FeedFilter } from '../types';
 import { EventRow } from './EventRows';
-import { IconArrowDown, IconChat, IconRefresh, IconTrash } from './icons';
+import { IconArrowDown, IconChat, IconPin, IconRefresh, IconTrash } from './icons';
 
 const FILTERS: Array<{ key: FeedFilter; label: string }> = [
   { key: 'all', label: '全部' },
@@ -38,6 +38,8 @@ export interface FeedProps {
   demo: boolean;
   quickRooms: readonly number[];
   onQuickRoom: (roomId: number) => void;
+  /** 锁定最新消息：列表不可手动滚动，始终贴底（嵌入视图默认开启） */
+  pinned?: boolean;
 }
 
 export function Feed({
@@ -57,6 +59,7 @@ export function Feed({
   demo,
   quickRooms,
   onQuickRoom,
+  pinned = false,
 }: FeedProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -99,6 +102,14 @@ export function Feed({
     const el = listRef.current;
     if (!el) return;
     const lastId = visible[visible.length - 1]?.id ?? null;
+
+    if (pinned) {
+      el.scrollTop = el.scrollHeight;
+      lastSeenRef.current = lastId;
+      setHasNew(false);
+      return;
+    }
+
     if (!lastId || lastId === lastSeenRef.current) return;
     const isFirst = lastSeenRef.current === null;
     lastSeenRef.current = lastId;
@@ -109,7 +120,7 @@ export function Feed({
     } else if (!isFirst) {
       setHasNew(true);
     }
-  }, [visible, autoScroll]);
+  }, [visible, autoScroll, pinned]);
 
   useEffect(() => {
     // 切换筛选时回到最底部
@@ -126,6 +137,7 @@ export function Feed({
   }, [autoScroll]);
 
   const handleScroll = () => {
+    if (pinned) return;
     const el = listRef.current;
     if (!el) return;
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 72;
@@ -208,15 +220,22 @@ export function Feed({
           ))}
         </div>
         <div className="feed-actions">
-          <button
-            type="button"
-            className={`toggle ${autoScroll ? 'is-on' : ''}`}
-            onClick={onToggleAutoScroll}
-            title="自动滚动到最新消息"
-          >
-            <i />
-            自动滚动
-          </button>
+          {pinned ? (
+            <span className="pin-chip" title="默认始终显示最新消息；在地址后加 ?scroll=1 可滚动查看历史">
+              <IconPin size={13} />
+              锁定最新
+            </span>
+          ) : (
+            <button
+              type="button"
+              className={`toggle ${autoScroll ? 'is-on' : ''}`}
+              onClick={onToggleAutoScroll}
+              title="自动滚动到最新消息"
+            >
+              <i />
+              自动滚动
+            </button>
+          )}
           <button type="button" className="icon-btn" onClick={onClear} title="清空消息" aria-label="清空消息">
             <IconTrash size={16} />
           </button>
@@ -236,22 +255,29 @@ export function Feed({
         </div>
       ) : null}
 
-      <div className="feed-list" ref={listRef} onScroll={handleScroll} style={{ fontSize }}>
+      <div
+        className={`feed-list ${pinned ? 'is-pinned' : ''}`}
+        ref={listRef}
+        onScroll={handleScroll}
+        style={{ fontSize }}
+      >
         {visible.length === 0 ? placeholder : null}
         {visible.map((event) => (
           <EventRow key={event.id} event={event} />
         ))}
       </div>
 
-      <button
-        type="button"
-        className={`jump-latest ${hasNew ? 'is-visible' : ''}`}
-        onClick={scrollToBottom}
-        tabIndex={hasNew ? 0 : -1}
-      >
-        <IconArrowDown size={14} />
-        有新消息
-      </button>
+      {pinned ? null : (
+        <button
+          type="button"
+          className={`jump-latest ${hasNew ? 'is-visible' : ''}`}
+          onClick={scrollToBottom}
+          tabIndex={hasNew ? 0 : -1}
+        >
+          <IconArrowDown size={14} />
+          有新消息
+        </button>
+      )}
 
       {demo ? <div className="feed-footnote">演示模式 · 消息由本地回放生成，未连接 B 站</div> : null}
     </section>

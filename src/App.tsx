@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Feed } from './components/Feed';
 import { OverlayView } from './components/OverlayView';
+import { StandaloneDanmaku } from './components/StandaloneDanmaku';
 import { GiftToasts } from './components/GiftToasts';
 import { RoomCard } from './components/RoomCard';
 import { SettingsDrawer } from './components/SettingsDrawer';
@@ -14,7 +15,9 @@ import type { FeedFilter } from './types';
 
 export default function App() {
   const route = resolveRoute();
-  if (route.kind === 'overlay') return <OverlayView mode={route.mode} />;
+  if (route.kind === 'overlay') {
+    return route.mode === 'danmaku' ? <StandaloneDanmaku /> : <OverlayView mode={route.mode} />;
+  }
   return <Dashboard />;
 }
 
