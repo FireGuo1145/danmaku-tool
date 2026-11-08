@@ -255,6 +255,13 @@ async function buildRoomBundle(input: number, refresh: boolean, auth: BiliAuthOp
 
   const realId = init?.room_id ?? input;
 
+  // 短号会映射到真实房间号，刷新时把真实房间相关缓存也清掉
+  if (refresh) {
+    for (const key of [...store.keys()]) {
+      if (key.includes(`:${realId}`)) store.delete(key);
+    }
+  }
+
   const [info, anchor, conf, buvid, loginDanmu] = await Promise.all([
     safe(
       () => cached(`info:${realId}`, 20_000, () => apiGet<RoomInfoData>(`https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${realId}`, referer)),

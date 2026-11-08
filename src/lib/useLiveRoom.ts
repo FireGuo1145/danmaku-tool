@@ -105,6 +105,12 @@ export function useLiveRoom(options: LiveRoomOptions) {
   const lastEventRef = useRef(0);
   const rateRef = useRef({ second: Math.floor(Date.now() / 1000), slots: new Array(RATE_WINDOW).fill(0) });
   const toastTimersRef = useRef<Set<number>>(new Set());
+  /** 上次鉴权重连时间，用于限流 */
+  const lastAuthRef = useRef(0);
+  /** 当前是否访客连接（uid = 0） */
+  const guestRef = useRef(false);
+  /** 近期被打码的昵称计数，用于发现服务端脱敏 */
+  const maskedRef = useRef({ count: 0, since: 0 });
 
   const teardown = useCallback(() => {
     if (retryTimerRef.current !== null) {
@@ -194,6 +200,27 @@ export function useLiveRoom(options: LiveRoomOptions) {
     toastTimersRef.current.add(timer);
   }, []);
 
+  const connectRef = useRef<((roomId: number, mode: 'fresh' | 'retry') => void) | null>(null);
+
+  /**
+   * 软重连：保留消息，重新拉取 token 并重连。
+   *
+   * B 站对未登录的访客会话运行一段时间后，会开始把弹幕里的用户信息脱敏（昵称变成 `取***`），
+   * 重新鉴权就能恢复。这里用于定期刷新凭证，以及检测到批量打码时自救。
+   */
+  const softReauth = useCallback((reason: string) => {
+    // 登录态（BILI_COOKIE / 手动 uid+token）不会被打码，也不需要自动重连
+    if (!desiredRef.current || demoRef.current || !guestRef.current) return;
+    const now = Date.now();
+    if (now - lastAuthRef.current < 4 * 60_000) return; // 至少间隔 4 分钟，避免频繁重连
+    const targetRoom = roomIdRef.current;
+    if (!targetRoom) return;
+    lastAuthRef.current = now;
+    maskedRef.current = { count: 0, since: 0 };
+    console.info(`[弹幕台] ${reason}，正在重新鉴权…`);
+    connectRef.current?.(targetRoom, 'retry');
+  }, []);
+
   /** 处理一条解析后的直播事件 */
   const applyParsed = useCallback(
     (cmd: string, payload: unknown) => {
@@ -226,6 +253,19 @@ export function useLiveRoom(options: LiveRoomOptions) {
         case 'danmaku': {
           statsRef.current.danmaku += 1;
           statDirtyRef.current = true;
+
+          // 访客连接跑久了 B 站会开始脱敏昵称，短时间内出现一批 `取***` 就重新鉴权
+          if (guestRef.current && feed.user.name.includes('*')) {
+            const now = Date.now();
+            if (now - maskedRef.current.since > 3 * 60_000) {
+              maskedRef.current = { count: 0, since: now };
+            }
+            maskedRef.current.count += 1;
+            if (maskedRef.current.count >= 6) {
+              maskedRef.current = { count: 0, since: now };
+              softReauth('检测到昵称被批量打码');
+            }
+          }
           break;
         }
         case 'gift': {
@@ -286,7 +326,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
 
       scheduleFlush();
     },
-    [bumpRate, pushToast, scheduleFlush],
+    [bumpRate, pushToast, scheduleFlush, softReauth],
   );
 
   const appendSystem = useCallback(
@@ -297,8 +337,6 @@ export function useLiveRoom(options: LiveRoomOptions) {
     },
     [scheduleFlush],
   );
-
-  const connectRef = useRef<((roomId: number, mode: 'fresh' | 'retry') => void) | null>(null);
 
   const scheduleRetry = useCallback((reason: string, generation: number) => {
     if (!desiredRef.current || generation !== generationRef.current) return;
@@ -329,6 +367,7 @@ export function useLiveRoom(options: LiveRoomOptions) {
   const startClient = useCallback(
     (bundle: RoomBundle, generation: number) => {
       const authUid = config.uid > 0 ? config.uid : bundle.danmaku.uid || 0;
+      guestRef.current = authUid === 0;
       const credentials = {
         roomid: bundle.room.roomId,
         uid: authUid,
@@ -387,6 +426,8 @@ export function useLiveRoom(options: LiveRoomOptions) {
         setStatus('live');
         setError(null);
         setStartedAt(Date.now());
+        lastAuthRef.current = Date.now();
+        maskedRef.current = { count: 0, since: 0 };
         appendSystem(`已连上弹幕服务器 · 房间 ${bundle.room.roomId}`, 'live');
       });
 
@@ -514,6 +555,20 @@ export function useLiveRoom(options: LiveRoomOptions) {
     const target = roomIdRef.current;
     if (target) connectRef.current?.(target, 'fresh');
   }, []);
+
+  // 访客会话定期刷新凭证；登录态不做任何自动重连
+  useEffect(() => {
+    if (status !== 'live' || config.authRefreshMinutes <= 0) return;
+
+    const timer = window.setInterval(() => {
+      if (!desiredRef.current || demoRef.current || !guestRef.current) return;
+      if (Date.now() - lastAuthRef.current >= config.authRefreshMinutes * 60_000) {
+        softReauth('访客凭证需要刷新');
+      }
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, [status, softReauth]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

@@ -45,5 +45,7 @@ export const config = {
   showEnter: readBool(env.VITE_SHOW_ENTER, true),
   showLike: readBool(env.VITE_SHOW_LIKE, false),
   giftToastMin: readInt(env.VITE_GIFT_TOAST_MIN, 1000, 0, Number.MAX_SAFE_INTEGER),
+  /** 访客弹幕凭证刷新间隔（分钟），0 表示关闭定期刷新 */
+  authRefreshMinutes: readInt(env.VITE_AUTH_REFRESH_MINUTES, 10, 0, 120),
   quickRooms,
 } as const;

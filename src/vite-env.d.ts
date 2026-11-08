@@ -25,6 +25,8 @@ interface ImportMetaEnv {
   readonly VITE_SHOW_LIKE?: string;
   /** 礼物浮层提示的最小金瓜子价值 */
   readonly VITE_GIFT_TOAST_MIN?: string;
+  /** 访客弹幕凭证刷新间隔（分钟），0 关闭 */
+  readonly VITE_AUTH_REFRESH_MINUTES?: string;
   /** 是否默认进入演示模式 */
   readonly VITE_DEMO_MODE?: string;
   /** 首页快捷房间号，逗号分隔 */
